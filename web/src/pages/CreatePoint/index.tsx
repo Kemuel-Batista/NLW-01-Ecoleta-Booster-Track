@@ -1,9 +1,10 @@
 import React, { useEffect, useState, ChangeEvent, FormEvent } from 'react';
 import { Link, useHistory } from 'react-router-dom';
-import { FiArrowLeft } from 'react-icons/fi';
+import { FiArrowLeft, FiCheckCircle } from 'react-icons/fi';
 import { Map, TileLayer, Marker } from 'react-leaflet';
 import axios from 'axios';
 import { LeafletMouseEvent } from 'leaflet';
+import Dropzone from '../../components/Dropzone';
 
 import './styles.css';
 import logo from '../../assets/logo.svg'
@@ -18,7 +19,7 @@ interface Item {
   image_url: string;
 }
 
-interface IBGEUFResponse {
+interface IBGEUFResponse {  
   sigla: string
 }
 
@@ -43,6 +44,9 @@ const CreatePoint = () => {
   const [selectedCity, setSelectedCity] = useState('0');
   const [selectedItems, setSelectedItems] = useState<number[]>([]);
   const [selectedPosition, setSelectedPosition] = useState<[number, number]>([0,0]);
+  const [selectedFile, setSelectedFile] = useState<File>();
+
+  const [showSucessModal, setShowSucessModal] = useState(false);
 
   const history = useHistory();
 
@@ -128,14 +132,26 @@ const CreatePoint = () => {
     const [latitude, longitude] = selectedPosition;
     const items = selectedItems;
 
-    const data = {
-      name, email, whatsapp, uf, city, latitude, longitude, items
+    const data = new FormData();
+    data.append('name', name)
+    data.append('email', email)
+    data.append('whatsapp', whatsapp)
+    data.append('uf', uf)
+    data.append('city', city)
+    data.append('latitude', String(latitude))
+    data.append('longitude', String(longitude))
+    data.append('items', items.join(','));
+
+    if(selectedFile){
+      data.append('image', selectedFile);
     }
 
     await api.post('points', data);
 
-    alert('Ponto de Coleta criado');
+    setShowSucessModal(true);
+  }
 
+  function handleNavigateHome(){
     history.push('/');
   }
 
@@ -149,6 +165,8 @@ const CreatePoint = () => {
 
       <form onSubmit={handleSubmit}>
         <h1>Cadastro do <br /> Ponto de Coleta</h1>
+
+        <Dropzone onFileUploaded={setSelectedFile} />
 
         <fieldset>
           <legend>
@@ -252,6 +270,16 @@ const CreatePoint = () => {
           Cadastrar ponto de Coleta
         </button>
       </form>
+
+      {showSucessModal && (
+        <div className="modal">
+          <FiCheckCircle color="#34cb79" size={50} />
+          <p className="modal-text">
+            Ponto de Coleta cadastrado com sucesso!
+          </p>
+          <button className="modal-button" onClick={handleNavigateHome}>Go Home</button>
+        </div>
+      )}
     </div>
   )
 }
